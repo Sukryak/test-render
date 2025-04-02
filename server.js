@@ -92,8 +92,14 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     const results = await predictions.data();
     
     // 추론 결과를 클래스 이름과 확률로 변환
-    // 참고: 클래스 이름은 Teachable Machine 모델에 따라 조정해야 합니다
-    const classNames = ['class1', 'class2', 'class3']; // 실제 클래스 이름으로 변경하세요
+    // metadata.json에서 클래스 이름 로드 (없으면 기본값 사용)
+    let classNames;
+    try {
+      const metadata = require('./model/metadata.json');
+      classNames = metadata.labels || ['class1', 'class2', 'class3'];
+    } catch (e) {
+      // 메타데이터 파일이 없으면 기본 클래스명 사용
+      classNames = ['class1', 'class2', 'class3'];
     
     const resultArray = Array.from(results).map((probability, index) => {
       return {
