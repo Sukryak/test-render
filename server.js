@@ -29,13 +29,24 @@ if (!fs.existsSync('uploads')) {
 
 const upload = multer({ storage: storage });
 
-// 모델 로드 (YOUR_MODEL_URL은 Teachable Machine에서 내보낸 모델 URL로 교체)
+// 로컬 모델 로드
 let model;
 async function loadModel() {
   try {
-    // 모델 URL을 실제 Teachable Machine에서 내보낸 URL로 변경하세요
-    model = await tf.loadLayersModel('YOUR_MODEL_URL');
+    // 로컬 파일 시스템에서 모델 로드
+    const modelPath = 'file://' + __dirname + '/model/model.json';
+    model = await tf.loadLayersModel(modelPath);
     console.log('모델이 성공적으로 로드되었습니다.');
+    
+    // 모델 클래스 정보 로드 (metadata.json이 있는 경우)
+    try {
+      const metadata = require('./model/metadata.json');
+      if (metadata && metadata.labels) {
+        console.log('모델 클래스:', metadata.labels);
+      }
+    } catch (metadataError) {
+      console.log('메타데이터 파일이 없거나 로드할 수 없습니다. 기본 클래스명을 사용합니다.');
+    }
   } catch (error) {
     console.error('모델 로드 중 오류 발생:', error);
   }
