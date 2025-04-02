@@ -59,9 +59,14 @@ loadModel();
 async function preprocessImage(imagePath) {
   // 이미지를 읽어서 텐서로 변환
   const imageBuffer = fs.readFileSync(imagePath);
-  const tfImage = tf.node.decodeImage(imageBuffer);
+  let tfImage = tf.node.decodeImage(imageBuffer);
   
-  // Teachable Machine 모델은 일반적으로 224x224 크기의 이미지를 사용합니다
+  // 4채널(RGBA) 이미지를 3채널(RGB)로 변환
+  if (tfImage.shape[2] === 4) {
+    tfImage = tfImage.slice([0, 0, 0], [tfImage.shape[0], tfImage.shape[1], 3]);
+  }
+  
+  // Teachable Machine 모델은, 일반적으로 224x224 크기의 이미지를 사용합니다
   const resized = tf.image.resizeBilinear(tfImage, [224, 224]);
   
   // 정규화 (0-1 범위로)
