@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
 // CORS 설정
 app.use(cors());
@@ -100,6 +100,7 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     } catch (e) {
       // 메타데이터 파일이 없으면 기본 클래스명 사용
       classNames = ['class1', 'class2', 'class3'];
+    }
     
     const resultArray = Array.from(results).map((probability, index) => {
       return {
