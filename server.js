@@ -4,7 +4,6 @@ const cors = require('cors');
 const tf = require('@tensorflow/tfjs-node');
 const fs = require('fs');
 const path = require('path');
-
 const app = express();
 const port = process.env.PORT || 10000;
 
@@ -84,11 +83,9 @@ app.post('/predict', upload.single('image'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: '이미지가 없습니다.' });
     }
-
     if (!model) {
       return res.status(500).json({ error: '모델이 로드되지 않았습니다.' });
     }
-
     // 이미지 전처리
     const imageTensor = await preprocessImage(req.file.path);
     
@@ -138,6 +135,45 @@ app.get('/', (req, res) => {
   res.json({ status: 'online', message: 'Teachable Machine 추론 서버가 실행 중입니다.' });
 });
 
+// 서버 시작
 app.listen(port, () => {
   console.log(`서버가 포트 ${port}에서 실행 중입니다.`);
 });
+
+// 서버 자체 핑 메커니즘
+const pingInterval = 14 * 60 * 1000; // 14분마다 핑 (15분보다 약간 짧게)
+
+function pingServer() {
+  console.log('서버에 핑을 보냅니다...' + new Date().toISOString());
+  
+  // 서버 URL (배포된 Render URL)
+  const serverUrl = process.env.SERVER_URL || 'https://test-render-c6um.onrender.com';
+  
+  // localhost인 경우 핑 무시 (개발 환경에서는 필요 없음)
+  if (serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
+    console.log('개발 환경입니다. 핑이 필요하지 않습니다.');
+    return;
+  }
+  
+  // 서버에 GET 요청 보내기
+  const https = require('https');
+  const req = https.get(serverUrl, (res) => {
+    console.log(`핑 응답: ${res.statusCode}`);
+  });
+  
+  req.on('error', (error) => {
+    console.error('핑 오류:', error);
+  });
+}
+
+// Render 환경에서만 핑 사용 (process.env.RENDER가 설정되어 있으면 Render 환경)
+if (process.env.RENDER) {
+  console.log('Render 환경을 감지했습니다. 핑 메커니즘을 활성화합니다.');
+  
+  // 서버 시작 후 1분 뒤 첫 핑 시작
+  setTimeout(() => {
+    pingServer();
+    // 이후 정기적으로 핑
+    setInterval(pingServer, pingInterval);
+  }, 60000);
+}
